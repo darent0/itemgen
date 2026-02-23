@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import random
 from dataclasses import dataclass
+from statistics import mean
 
 
 # Seltenheitswahrscheinlichkeiten (in Prozent)
@@ -135,6 +136,18 @@ def print_equipment(equipment: dict[str, Item], highlighted_slot: str | None = N
             f"- {slot}: {item.color_code}{item.name}{RESET} "
             f"({item.rarity}, iLvl {item.itemlevel}){marker}"
         )
+
+    average_itemlevel = mean(item.itemlevel for item in equipment.values())
+    most_common_rarity, _, most_common_color = max(
+        RARITY_CHANCES,
+        key=lambda rarity_data: sum(
+            1 for item in equipment.values() if item.rarity == rarity_data[0]
+        ),
+    )
+    print(
+        f"\nDurchschnitts-iLvl: {most_common_color}{average_itemlevel:.1f}{RESET} "
+        f"(häufigste Farbe: {most_common_rarity})"
+    )
 
 
 def main() -> None:

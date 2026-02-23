@@ -17,6 +17,8 @@ RARITY_CHANCES = [
     ("Orange", 0.05, "\033[38;5;208m"),
 ]
 
+RARITY_ORDER = {rarity: index for index, (rarity, _, _) in enumerate(RARITY_CHANCES)}
+
 RESET = "\033[0m"
 
 PREFIXES = [
@@ -79,6 +81,19 @@ def roll_rarity() -> tuple[str, str]:
     return last_rarity, last_color
 
 
+def keep_current_rarity_on_downgrade(
+    current_item: Item, new_itemlevel: int, new_rarity: str, new_color: str
+) -> tuple[str, str]:
+    """Bei gleichem Itemlevel bleibt die aktuelle Farbe, falls ein niedrigerer Roll kommt."""
+    current_rank = RARITY_ORDER[current_item.rarity]
+    new_rank = RARITY_ORDER[new_rarity]
+
+    if new_itemlevel == current_item.itemlevel and new_rank < current_rank:
+        return current_item.rarity, current_item.color_code
+
+    return new_rarity, new_color
+
+
 def generate_unique_sword_name(used_names: set[str], roll_number: int) -> str:
     """Erzeugt möglichst eindeutige Schwertnamen."""
     for _ in range(100):
@@ -121,6 +136,7 @@ def main() -> None:
         roll_number += 1
         new_level = roll_itemlevel(current_item.itemlevel)
         rarity, color = roll_rarity()
+        rarity, color = keep_current_rarity_on_downgrade(current_item, new_level, rarity, color)
         name = generate_unique_sword_name(used_names, roll_number)
 
         current_item = Item(name=name, rarity=rarity, color_code=color, itemlevel=new_level)

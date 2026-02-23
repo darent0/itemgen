@@ -47,6 +47,24 @@ SUFFIXES = [
     "Sturmschwert",
 ]
 
+EQUIPMENT_SLOTS = [
+    "Kopf",
+    "Hals",
+    "Schultern",
+    "Brust",
+    "Handgelenk",
+    "Hand",
+    "Taille",
+    "Beine",
+    "Schuhe",
+    "Rücken",
+    "Ring",
+    "Schmuck",
+    "Waffenhand",
+    "Nebenhand",
+    "Fernkampf",
+]
+
 
 @dataclass
 class Item:
@@ -108,24 +126,37 @@ def generate_unique_sword_name(used_names: set[str], roll_number: int) -> str:
     return fallback
 
 
-def print_item(item: Item) -> None:
-    print("\nDein aktuelles Item:")
-    print(f"Typ: Einhandschwert")
-    print(f"Name: {item.color_code}{item.name}{RESET} ({item.rarity})")
-    print(f"Itemlevel: {item.itemlevel}")
+def print_equipment(equipment: dict[str, Item], highlighted_slot: str | None = None) -> None:
+    print("\nDeine Ausrüstung:")
+    for slot in EQUIPMENT_SLOTS:
+        item = equipment[slot]
+        marker = " <- aktualisiert" if slot == highlighted_slot else ""
+        print(
+            f"- {slot}: {item.color_code}{item.name}{RESET} "
+            f"({item.rarity}, iLvl {item.itemlevel}){marker}"
+        )
 
 
 def main() -> None:
     print("=== WoW-Style Item Upgrade ===")
-    print("Startitem: Graues Einhandschwert mit Itemlevel 100")
-    print("Jeder Roll erzeugt einen neuen Namen und eine neue Seltenheit.")
+    print("Du startest mit vollständiger, grauer Ausrüstung auf Itemlevel 100.")
+    print("Jeder Roll aktualisiert genau einen zufälligen Ausrüstungsslot.")
 
     used_names: set[str] = set()
-    roll_number = 1
+    roll_number = 0
 
-    start_name = generate_unique_sword_name(used_names, roll_number)
-    current_item = Item(name=start_name, rarity="Grau", color_code="\033[90m", itemlevel=100)
-    print_item(current_item)
+    equipment: dict[str, Item] = {}
+    for slot in EQUIPMENT_SLOTS:
+        roll_number += 1
+        start_name = generate_unique_sword_name(used_names, roll_number)
+        equipment[slot] = Item(
+            name=start_name,
+            rarity="Grau",
+            color_code="\033[90m",
+            itemlevel=100,
+        )
+
+    print_equipment(equipment)
 
     while True:
         user_input = input("\nDrücke [Enter] für Roll oder tippe 'q' zum Beenden: ").strip().lower()
@@ -134,13 +165,17 @@ def main() -> None:
             break
 
         roll_number += 1
+        chosen_slot = random.choice(EQUIPMENT_SLOTS)
+        current_item = equipment[chosen_slot]
+
         new_level = roll_itemlevel(current_item.itemlevel)
         rarity, color = roll_rarity()
         rarity, color = keep_current_rarity_on_downgrade(current_item, new_level, rarity, color)
         name = generate_unique_sword_name(used_names, roll_number)
 
-        current_item = Item(name=name, rarity=rarity, color_code=color, itemlevel=new_level)
-        print_item(current_item)
+        equipment[chosen_slot] = Item(name=name, rarity=rarity, color_code=color, itemlevel=new_level)
+        print(f"\nRoll #{roll_number}: Slot '{chosen_slot}' wurde aktualisiert.")
+        print_equipment(equipment, highlighted_slot=chosen_slot)
 
 
 if __name__ == "__main__":
